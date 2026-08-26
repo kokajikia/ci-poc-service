@@ -28,6 +28,3 @@ checks:
   lint: true
   test: true
   typecheck: true
-
-versioning:
-  strategy: release-please
