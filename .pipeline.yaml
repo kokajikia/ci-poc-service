@@ -1,0 +1,33 @@
+service:
+  name: campaign-api
+  type: docker
+
+deploy:
+  targets:
+    - name: dev
+      infra: aws-ecs
+      markets: [shared]
+      trigger: auto
+
+    - name: qa
+      infra: aws-ecs
+      markets: [shared]
+      trigger: auto
+
+    - name: stage
+      infra: aws-ecs
+      markets: [ge, am, maxbet]
+      trigger: manual
+
+    - name: prod
+      infra: aws-ecs
+      markets: [ge, am, maxbet]
+      trigger: manual
+
+checks:
+  lint: true
+  test: true
+  typecheck: true
+
+versioning:
+  strategy: release-please

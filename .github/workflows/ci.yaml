@@ -1,0 +1,14 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  pipeline:
+    uses: cee-hub/ci-templates/.github/workflows/pipeline.yaml@main
+    with:
+      config-path: .pipeline.yaml
+    secrets: inherit
