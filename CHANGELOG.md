@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/kokajikia/ci-poc-service/compare/v1.0.0...v1.1.0) (2026-08-26)
+
+
+### Features
+
+* trigger pipeline on tags for stage/prod deploys ([a82e24e](https://github.com/kokajikia/ci-poc-service/commit/a82e24ee730d026f49a23cc02aea37bbe82eaf8f))
+
 ## 1.0.0 (2026-08-26)
 
 
