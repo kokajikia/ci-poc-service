@@ -8,46 +8,9 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: read
-
 jobs:
-  resolve:
-    runs-on: ubuntu-latest
-    outputs:
-      service-name: ${{ steps.config.outputs.service-name }}
-      service-type: ${{ steps.config.outputs.service-type }}
-      infra: ${{ steps.config.outputs.infra }}
-      environments: ${{ steps.envs.outputs.environments }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Read service config
-        id: config
-        run: |
-          echo "service-name=$(yq '.service.name' .pipeline.yaml)" >> $GITHUB_OUTPUT
-          echo "service-type=$(yq '.service.type' .pipeline.yaml)" >> $GITHUB_OUTPUT
-          # All environments share the same infra type for this service
-          echo "infra=$(yq '.deploy.environments[0].infra' .pipeline.yaml)" >> $GITHUB_OUTPUT
-
-      - name: Build environment list
-        id: envs
-        run: |
-          # Expand markets into individual environment names
-          ENVS=$(yq '.deploy.environments[] |
-            (if .markets == ["shared"] then [.name]
-             else [.markets[] | .name + "-" + .]
-             end)[]' -o=json .pipeline.yaml | jq -sc '.')
-          echo "environments=$ENVS" >> $GITHUB_OUTPUT
-          echo "### Environments: $(echo $ENVS | jq -r 'join(", ")')" >> $GITHUB_STEP_SUMMARY
-
   deploy:
-    needs: resolve
     uses: kokajikia/ci-templates/.github/workflows/_deploy.yaml@main
     with:
-      service-name: ${{ needs.resolve.outputs.service-name }}
-      service-type: ${{ needs.resolve.outputs.service-type }}
-      infra: ${{ needs.resolve.outputs.infra }}
       image-tag: ${{ inputs.image-tag }}
-      environments: ${{ needs.resolve.outputs.environments }}
     secrets: inherit
