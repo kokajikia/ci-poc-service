@@ -24,3 +24,10 @@ checks:
   lint: true
   test: true
   typecheck: true
+
+notifications:
+  slack:
+    - channel: "#campaign-api-deployments"
+      environments: [stage, prod]
+    - channel: "#dev-feed"
+      environments: [dev, qa]
