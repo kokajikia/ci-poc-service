@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    uses: kokajikia/ci-templates/.github/workflows/_deploy.yaml@main
+    uses: kokajikia/ci-templates/.github/workflows/deploy.yaml@main
     with:
       image-tag: ${{ inputs.image-tag }}
     secrets: inherit

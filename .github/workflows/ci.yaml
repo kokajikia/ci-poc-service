@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   ci:
-    uses: kokajikia/ci-templates/.github/workflows/pipeline.yaml@main
+    uses: kokajikia/ci-templates/.github/workflows/ci.yaml@main
     with:
       config-path: .pipeline.yaml
     secrets: inherit
