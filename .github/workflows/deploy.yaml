@@ -3,24 +3,13 @@ name: Deploy
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: 'What to deploy: branch name, tag (v1.2.0), or commit SHA'
+      image-tag:
+        description: 'Image tag to deploy (commit SHA or version tag like v1.2.0)'
         required: true
         type: string
-        default: main
-      environment:
-        description: 'Where to deploy'
-        required: true
-        type: choice
-        options:
-          - dev
-          - qa
-          - stage-ge
-          - stage-am
-          - stage-maxbet
-          - prod-ge
-          - prod-am
-          - prod-maxbet
+
+permissions:
+  contents: read
 
 jobs:
   resolve:
@@ -29,17 +18,28 @@ jobs:
       service-name: ${{ steps.config.outputs.service-name }}
       service-type: ${{ steps.config.outputs.service-type }}
       infra: ${{ steps.config.outputs.infra }}
+      environments: ${{ steps.envs.outputs.environments }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Read service config
         id: config
         run: |
           echo "service-name=$(yq '.service.name' .pipeline.yaml)" >> $GITHUB_OUTPUT
           echo "service-type=$(yq '.service.type' .pipeline.yaml)" >> $GITHUB_OUTPUT
-          
-          ENV_BASE=$(echo "${{ inputs.environment }}" | sed 's/-[a-z]*$//')
-          INFRA=$(yq ".deploy.environments[] | select(.name == \"$ENV_BASE\") | .infra" .pipeline.yaml)
-          echo "infra=$INFRA" >> $GITHUB_OUTPUT
+          # All environments share the same infra type for this service
+          echo "infra=$(yq '.deploy.environments[0].infra' .pipeline.yaml)" >> $GITHUB_OUTPUT
+
+      - name: Build environment list
+        id: envs
+        run: |
+          # Expand markets into individual environment names
+          ENVS=$(yq '.deploy.environments[] |
+            (if .markets == ["shared"] then [.name]
+             else [.markets[] | .name + "-" + .]
+             end)[]' -o=json .pipeline.yaml | jq -sc '.')
+          echo "environments=$ENVS" >> $GITHUB_OUTPUT
+          echo "### Environments: $(echo $ENVS | jq -r 'join(", ")')" >> $GITHUB_STEP_SUMMARY
 
   deploy:
     needs: resolve
@@ -47,7 +47,7 @@ jobs:
     with:
       service-name: ${{ needs.resolve.outputs.service-name }}
       service-type: ${{ needs.resolve.outputs.service-type }}
-      ref: ${{ inputs.ref }}
-      environment: ${{ inputs.environment }}
       infra: ${{ needs.resolve.outputs.infra }}
+      image-tag: ${{ inputs.image-tag }}
+      environments: ${{ needs.resolve.outputs.environments }}
     secrets: inherit
