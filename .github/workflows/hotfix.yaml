@@ -1,0 +1,55 @@
+name: Hotfix
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build and deploy from (e.g. hotfix/fix-login-crash)'
+        required: true
+        type: string
+      environment:
+        description: 'Target environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - qa
+          - stage-ge
+          - stage-am
+          - stage-maxbet
+          - prod-ge
+          - prod-am
+          - prod-maxbet
+
+jobs:
+  read-config:
+    runs-on: ubuntu-latest
+    outputs:
+      service-name: ${{ steps.config.outputs.service-name }}
+      service-type: ${{ steps.config.outputs.service-type }}
+      infra: ${{ steps.resolve.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read config
+        id: config
+        run: |
+          echo "service-name=$(yq '.service.name' .pipeline.yaml)" >> $GITHUB_OUTPUT
+          echo "service-type=$(yq '.service.type' .pipeline.yaml)" >> $GITHUB_OUTPUT
+      - name: Resolve infra from environment
+        id: resolve
+        run: |
+          ENV_BASE=$(echo "${{ inputs.environment }}" | sed 's/-[a-z]*$//')
+          INFRA=$(yq ".deploy.targets[] | select(.name == \"$ENV_BASE\") | .infra" .pipeline.yaml)
+          echo "infra=$INFRA" >> $GITHUB_OUTPUT
+
+  hotfix:
+    needs: read-config
+    uses: kokajikia/ci-templates/.github/workflows/_hotfix.yaml@main
+    with:
+      service-name: ${{ needs.read-config.outputs.service-name }}
+      service-type: ${{ needs.read-config.outputs.service-type }}
+      environment: ${{ inputs.environment }}
+      infra: ${{ needs.read-config.outputs.infra }}
+      branch: ${{ inputs.branch }}
+      triggered-by: ${{ github.actor }}
+    secrets: inherit
