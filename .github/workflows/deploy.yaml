@@ -1,14 +1,15 @@
-name: Hotfix
+name: Deploy
 
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to build and deploy from (e.g. hotfix/fix-login-crash)'
+      ref:
+        description: 'What to deploy: branch name, tag (v1.2.0), or commit SHA'
         required: true
         type: string
+        default: main
       environment:
-        description: 'Target environment'
+        description: 'Where to deploy'
         required: true
         type: choice
         options:
@@ -22,34 +23,31 @@ on:
           - prod-maxbet
 
 jobs:
-  read-config:
+  resolve:
     runs-on: ubuntu-latest
     outputs:
       service-name: ${{ steps.config.outputs.service-name }}
       service-type: ${{ steps.config.outputs.service-type }}
-      infra: ${{ steps.resolve.outputs.infra }}
+      infra: ${{ steps.config.outputs.infra }}
     steps:
       - uses: actions/checkout@v4
-      - name: Read config
+      - name: Read service config
         id: config
         run: |
           echo "service-name=$(yq '.service.name' .pipeline.yaml)" >> $GITHUB_OUTPUT
           echo "service-type=$(yq '.service.type' .pipeline.yaml)" >> $GITHUB_OUTPUT
-      - name: Resolve infra
-        id: resolve
-        run: |
+          
           ENV_BASE=$(echo "${{ inputs.environment }}" | sed 's/-[a-z]*$//')
-          INFRA=$(yq ".deploy.targets[] | select(.name == \"$ENV_BASE\") | .infra" .pipeline.yaml)
+          INFRA=$(yq ".deploy.environments[] | select(.name == \"$ENV_BASE\") | .infra" .pipeline.yaml)
           echo "infra=$INFRA" >> $GITHUB_OUTPUT
 
-  hotfix:
-    needs: read-config
-    uses: kokajikia/ci-templates/.github/workflows/_hotfix.yaml@main
+  deploy:
+    needs: resolve
+    uses: kokajikia/ci-templates/.github/workflows/_deploy.yaml@main
     with:
-      service-name: ${{ needs.read-config.outputs.service-name }}
-      service-type: ${{ needs.read-config.outputs.service-type }}
+      service-name: ${{ needs.resolve.outputs.service-name }}
+      service-type: ${{ needs.resolve.outputs.service-type }}
+      ref: ${{ inputs.ref }}
       environment: ${{ inputs.environment }}
-      infra: ${{ needs.read-config.outputs.infra }}
-      branch: ${{ inputs.branch }}
-      triggered-by: ${{ github.actor }}
+      infra: ${{ needs.resolve.outputs.infra }}
     secrets: inherit

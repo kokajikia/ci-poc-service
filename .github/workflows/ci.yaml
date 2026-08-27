@@ -1,18 +1,17 @@
-name: CI/CD
+name: CI
 
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
   packages: write
 
 jobs:
-  pipeline:
+  ci:
     uses: kokajikia/ci-templates/.github/workflows/pipeline.yaml@main
     with:
       config-path: .pipeline.yaml

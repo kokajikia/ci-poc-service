@@ -3,26 +3,22 @@ service:
   type: docker
 
 deploy:
-  targets:
+  environments:
     - name: dev
       infra: aws-ecs
       markets: [shared]
-      trigger: auto
 
     - name: qa
       infra: aws-ecs
       markets: [shared]
-      trigger: auto
 
     - name: stage
       infra: aws-ecs
       markets: [ge, am, maxbet]
-      trigger: manual
 
     - name: prod
       infra: aws-ecs
       markets: [ge, am, maxbet]
-      trigger: manual
 
 checks:
   lint: true
