@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       environment:
-        description: 'Target environment to deploy to'
+        description: 'Target environment'
         required: true
         type: choice
         options:
@@ -35,7 +35,7 @@ jobs:
         run: |
           echo "service-name=$(yq '.service.name' .pipeline.yaml)" >> $GITHUB_OUTPUT
           echo "service-type=$(yq '.service.type' .pipeline.yaml)" >> $GITHUB_OUTPUT
-      - name: Resolve infra from environment
+      - name: Resolve infra
         id: resolve
         run: |
           ENV_BASE=$(echo "${{ inputs.environment }}" | sed 's/-[a-z]*$//')

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Version to roll back to (e.g. v1.0.0, v1.2.3)'
+        description: 'Version to roll back to (e.g. v1.0.0)'
         required: true
         type: string
       environment:
@@ -35,10 +35,9 @@ jobs:
         run: |
           echo "service-name=$(yq '.service.name' .pipeline.yaml)" >> $GITHUB_OUTPUT
           echo "service-type=$(yq '.service.type' .pipeline.yaml)" >> $GITHUB_OUTPUT
-      - name: Resolve infra from environment
+      - name: Resolve infra
         id: resolve
         run: |
-          # Map environment back to its infra type from .pipeline.yaml
           ENV_BASE=$(echo "${{ inputs.environment }}" | sed 's/-[a-z]*$//')
           INFRA=$(yq ".deploy.targets[] | select(.name == \"$ENV_BASE\") | .infra" .pipeline.yaml)
           echo "infra=$INFRA" >> $GITHUB_OUTPUT
