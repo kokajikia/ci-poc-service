@@ -14,7 +14,7 @@ deploy:
 
     - name: stage
       infra: aws-ecs
-      markets: [ge, am, maxbet]
+      markets: [maxbet]
 
     - name: prod
       infra: aws-ecs
