@@ -4,46 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       image-tag:
-        description: 'Image tag to deploy (optional — if empty, uses the selected branch/tag)'
+        description: 'Image tag (optional — if empty, uses selected branch/tag)'
         required: false
         type: string
         default: ''
 
 jobs:
-  resolve-tag:
-    runs-on: ubuntu-latest
-    outputs:
-      resolved-tag: ${{ steps.resolve.outputs.tag }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Resolve image tag
-        id: resolve
-        run: |
-          INPUT_TAG="${{ inputs.image-tag }}"
-          
-          if [ -n "$INPUT_TAG" ]; then
-            # User specified a tag explicitly
-            echo "tag=$INPUT_TAG" >> $GITHUB_OUTPUT
-            echo "Using specified image tag: $INPUT_TAG"
-          else
-            # Use the commit SHA of the selected branch/tag
-            SHA=$(git rev-parse --short HEAD)
-            REF="${{ github.ref_name }}"
-            
-            # If on a version tag, use the tag name; otherwise use SHA
-            if [[ "$REF" =~ ^v[0-9] ]]; then
-              echo "tag=$REF" >> $GITHUB_OUTPUT
-              echo "Using tag: $REF"
-            else
-              echo "tag=$SHA" >> $GITHUB_OUTPUT
-              echo "Using commit SHA from branch $REF: $SHA"
-            fi
-          fi
-
   deploy:
-    needs: resolve-tag
     uses: kokajikia/ci-templates/.github/workflows/deploy.yaml@main
     with:
-      image-tag: ${{ needs.resolve-tag.outputs.resolved-tag }}
+      image-tag: ${{ inputs.image-tag }}
     secrets: inherit
